@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PaduPadan – Digital Closet Assistant</title>
+<style>
+:root{--t:#279C8B;--d:#264653;--c:#E76F51;--k:#F8F3E8;--g:#e6e6e6;--o:#F4A261;--y:#E9C46A}
+*{box-sizing:border-box;margin:0;font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
+body{background:#dfe7ea;min-height:100vh;display:flex;align-items:center;justify-content:center;color:var(--d)}
+#app{width:390px;height:780px;max-height:100vh;background:#fff;border-radius:28px;box-shadow:0 12px 40px #0003;position:relative;display:flex;flex-direction:column;overflow:hidden}
+@media(max-width:480px){body{display:block}#app{width:100%;height:100vh;border-radius:0}}
+header{display:flex;align-items:center;gap:10px;padding:16px 18px 8px;font-weight:700;font-size:20px}
+header button{background:none;border:0;font-size:22px;cursor:pointer;color:var(--d)}
+#v{flex:1;overflow-y:auto;padding:8px 18px 20px}
+nav{display:flex;justify-content:space-around;align-items:center;padding:8px 6px 12px;border-top:1px solid #eee;background:#fff}
+nav a{font-size:11px;text-align:center;color:#778;cursor:pointer;text-decoration:none;min-width:58px}
+nav a b{display:block;font-size:22px;font-weight:400}
+nav a.on{color:var(--d);font-weight:700}
+nav a.plus b{background:var(--t);color:#fff;width:46px;height:46px;border-radius:50%;line-height:46px;font-size:30px;margin:-4px auto 0}
+h2{font-size:18px;margin:16px 0 8px}h3{font-size:15px;margin:12px 0 6px}
+.card{background:var(--k);border:1.5px solid #f0b8a8;border-radius:16px;padding:12px;margin:10px 0;cursor:pointer}
+.plain{border-color:#eadfce}
+.btn{display:block;width:100%;background:var(--t);color:#fff;border:0;border-radius:24px;padding:13px;font-size:15px;font-weight:600;cursor:pointer;margin:12px 0}
+.btn.o{background:#fff;color:var(--t);border:2px solid var(--t)}.btn.r{background:var(--c)}
+.btn:active,.chip:active{transform:scale(.97)}
+.row{display:flex;gap:8px;flex-wrap:wrap}.sp{justify-content:space-between;align-items:center}
+.chip{border:0;background:var(--g);border-radius:20px;padding:9px 16px;font-size:14px;cursor:pointer;color:#222}
+.chip.on{background:var(--t);color:#fff}
+input,select,textarea{width:100%;border:1.5px solid #e8a897;border-radius:12px;padding:12px;font-size:14px;margin:4px 0 10px;background:#fff}
+label{font-size:13px;font-weight:600}
+.err{color:#c0392b;font-size:13px;min-height:16px;margin-bottom:4px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.img{height:120px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:54px;background:linear-gradient(135deg,#f3ece0,#e2d5c3)}
+.tag{display:inline-block;background:#f4b6a3;color:#7a3a2a;border-radius:10px;padding:2px 10px;font-size:12px}
+.dot{display:inline-block;width:22px;height:22px;border-radius:50%;border:1px solid #0002;margin-right:5px;cursor:pointer;vertical-align:middle}
+.dot.on{outline:3px solid var(--t)}
+.ic{width:62px;height:62px;border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:28px;cursor:pointer;border:0}
+.item{display:flex;gap:12px;align-items:center;margin:10px 0}.item .img{width:60px;height:60px;font-size:30px}
+.toast{position:absolute;left:50%;bottom:90px;transform:translateX(-50%);background:var(--d);color:#fff;padding:10px 18px;border-radius:20px;font-size:13px;z-index:9}
+.mod{position:absolute;inset:0;background:#0006;display:flex;align-items:center;justify-content:center;z-index:8;padding:24px}
+.mod>div{background:#fff;border-radius:18px;padding:20px;width:100%}
+.bar{background:var(--t);border-radius:8px 8px 0 0;width:100%}
+.ring{width:110px;height:110px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:20px}
+.spin{width:42px;height:42px;border:5px solid #ddd;border-top-color:var(--t);border-radius:50%;animation:s 1s linear infinite;margin:16px auto}
+@keyframes s{to{transform:rotate(360deg)}}
+.center{text-align:center}.sm{font-size:13px;color:#667}
+.splash{background:var(--d);color:#fff;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;margin:-8px -18px -20px;min-height:700px}
+</style>
+</head>
+<body>
+<div id="app">
+  <header id="h"><button id="bk" onclick="history.back()" aria-label="Kembali">←</button><span id="t"></span></header>
+  <main id="v"></main>
+  <nav id="n"></nav>
+</div>
+
+<script>
+/* ===== STATE (data disimpan di memori; refresh = reset) ===== */
+const $ = s => document.querySelector(s);
+const S = {
+  user: 'User', occ: 'Kuliah', sty: '', otherOcc: '', rf: 'Semua', closetCat: 'Semua', q: '',
+  items: [
+    {id:1,n:'Maroon Blouse',c:'Atasan',e:'👚',st:'Elegan, Simple, Feminim',d:'Kemeja / Blouse, Maroon, tekstur samar'},
+    {id:2,n:'Blue Jeans',c:'Bawahan',e:'👖',st:'Casual, Simple',d:'Celana jeans wide leg biru'},
+    {id:3,n:'Denim Pants',c:'Bawahan',e:'👖',st:'Casual',d:'Celana navy'},
+    {id:4,n:'Pink Sweater',c:'Atasan',e:'🧶',st:'Feminim, Casual',d:'Sweater pink crop'},
+    {id:5,n:'Ocean Blue Viscose',c:'Kerudung',e:'🧣',st:'Elegan',d:'Kerudung viscose biru'},
+    {id:6,n:'Maroon Cashmere Pashmina',c:'Kerudung',e:'🧣',st:'Elegan, Classic',d:'Pashmina maroon'}],
+  O: [
+    {id:0,occ:'Kuliah',st:'Casual',t:'Simpel & Kasual',it:['Kaos Putih','Celana Jeans','Kemeja Hitam','Sneakers'],cl:['#fff','#6b8fb3','#222','#ddd'],w:'24°C Berawan'},
+    {id:1,occ:'Kuliah',st:'Minimalis',t:'Clean Minimalis',it:['Kemeja Putih','Celana Hitam','Sneakers'],cl:['#eee','#222','#ccc'],w:'24°C Berawan'},
+    {id:2,occ:'Rapat',st:'Formal',t:'Smart Formal',it:['Blazer','Celana Hitam','Loafers'],cl:['#222','#555','#111'],w:'24°C Berawan'},
+    {id:3,occ:'Hangout',st:'Casual',t:'Casual & Fresh',it:['Kemeja Biru','Kaos Putih','Jeans','Tas','Sneakers'],cl:['#9db4d6','#fff','#6b8fb3','#222'],w:'24°C Berawan'},
+    {id:4,occ:'Hangout',st:'Vintage',t:'Retro Santai',it:['Sweater Pink','Rok Midi','Sneakers'],cl:['#e3b0a8','#e9ddd0','#222'],w:'24°C Berawan'},
+    {id:5,occ:'Formal',st:'Minimalis',t:'Classic Look',it:['Blouse Maroon','Celana Krem','Pashmina'],cl:['#6b2c3a','#d8c6a8','#b99'],w:'24°C Berawan'}],
+  today: 0, cur: 0, saved: {}, fb: [], draft: null, editId: null, hist: [
+    {t:'Outfit Kuliah',d:'12 Mar 2026',g:'Kasual',s:'26°C',f:false,e:'👔👖👟'},
+    {t:'Outfit Hangout',d:'10 Mar 2026',g:'Santai',s:'28°C',f:true,e:'👕🩳👞'},
+    {t:'Outfit Rapat',d:'6 Mar 2026',g:'Formal',s:'24°C',f:false,e:'🧥👖👞'}],
+  ootdOpen: true, like: true, notif: ['Rekomendasi baru untukmu! – 2 jam lalu','Pakaian baru berhasil disimpan – 1 hari lalu','Jangan lupa melengkapi profil – 1 hari lalu','Ada update fitur baru! – 2 hari lalu']
+};
+const COL = ['#e8dccf','#d0c2b5','#5e2b3a','#f2a25f','#111','#d2ddf5','#6b869b','#1d4a7c','#c99a94','#4f5563','#5f7f68','#a96e9c'];
+const OCC = ['Kuliah','Rapat','Hangout','Formal','Lainnya'];
+const STY = ['Casual','Minimalis','Vintage','Sporty','Formal','Feminim','Edgy','Streetwear'];
+const ALT = ['Kaos Putih','Kemeja Putih','Blouse Maroon','Celana Jeans','Celana Hitam','Rok Midi','Sneakers','Loafers','Kemeja Hitam','Blazer'];
+
+/* ===== HELPER UI ===== */
+function chips(arr, cur, fn){ return '<div class="row">'+arr.map(a=>`<button class="chip ${a===cur?'on':''}" onclick="${fn}('${a}')">${a}</button>`).join('')+'</div>'; }
+function toast(m){ const d=document.createElement('div'); d.className='toast'; d.textContent=m; $('#app').append(d); setTimeout(()=>d.remove(),2000); }
+function modal(msg, ok, fn){ const d=document.createElement('div'); d.className='mod'; d.id='mod';
+  d.innerHTML=`<div><p>${msg}</p><button class="btn" id="mok">${ok}</button><button class="btn o" onclick="$('#mod').remove()">Batal</button></div>`;
+  $('#app').append(d); $('#mok').onclick=()=>{d.remove();fn();}; }
+function go(n){ location.hash=n; }
+const mainOf = () => S.O[S.today];
+function outfitCard(o){ return `<div class="card plain" onclick="S.cur=${o.id};go('outfit')"><div class="img">${'👚👖🧥👟'.slice(0,0)||'🧍'}</div><span class="tag">${o.occ}</span> <b>${o.t}</b><div style="margin-top:6px">${o.cl.map(c=>`<span class="dot" style="background:${c}"></span>`).join('')}</div></div>`; }
+
+/* ===== LAYAR (setiap fungsi = 1 halaman di sitemap) ===== */
+const R = {};
+R.splash = () => { setTimeout(()=>{ if((location.hash.slice(1)||'splash')==='splash') go('login'); },1800);
+  return {h:'<div class="splash"><div style="font-size:54px">🪝</div><h1 style="font-style:italic">PaduPadan</h1><p class="sm" style="color:#bcd">Your wardrobe, your style</p></div>',hide:1}; };
+
+R.login = () => ({hide:1,h:`<h1 style="margin-top:40px">Masuk</h1><p>Selamat datang kembali!</p><br>
+ <input id="em" placeholder="Email atau nomor telepon"><input id="pw" type="password" placeholder="Password">
+ <label class="sm"><input type="checkbox" style="width:auto;margin:0 6px 0 0" onchange="$('#pw').type=this.checked?'text':'password'">Tampilkan password</label>
+ <div class="err" id="er"></div><button class="btn" onclick="doLogin()">Masuk</button>
+ <p class="center"><a href="#" onclick="toast('Tautan reset dikirim ke email (demo)');return false" style="color:var(--d);font-weight:600">Lupa password?</a></p><br>
+ <button class="btn o" onclick="toast('Login Google (demo)')">🇬 Masuk dengan Google</button>
+ <button class="btn o" onclick="toast('Login Apple (demo)')">  Masuk dengan Apple</button>
+ <p class="center sm" style="margin-top:20px">Belum punya akun? <a href="#register" style="color:var(--d);font-weight:700">Daftar</a></p>`});
+function doLogin(){ const e=$('#em').value.trim(), p=$('#pw').value;
+  if(!e||!p){ $('#er').textContent='Email/nomor telepon dan password wajib diisi.'; return; }
+  if(p.length<6){ $('#er').textContent='Password minimal 6 karakter.'; return; }
+  S.user=e.includes('@')?e.split('@')[0]:e; go('home'); }
+
+R.register = () => ({hide:1,h:`<h1 style="margin-top:40px">Daftar</h1><p>Buat akun untuk mulai menggunakan PaduPadan</p><br>
+ <input id="nm" placeholder="Nama lengkap"><input id="em" type="email" placeholder="Email"><input id="pw" type="password" placeholder="Password">
+ <input id="pw2" type="password" placeholder="Konfirmasi password"><div class="err" id="er"></div>
+ <button class="btn" onclick="doReg()">Daftar</button><p class="center sm">Sudah punya akun? <a href="#login" style="color:var(--d);font-weight:700">Masuk</a></p>`});
+function doReg(){ const n=$('#nm').value.trim(),e=$('#em').value.trim(),p=$('#pw').value,q=$('#pw2').value,x=$('#er');
+  if(!n||!e||!p) return x.textContent='Semua kolom wajib diisi.';
+  if(!/^\S+@\S+\.\S+$/.test(e)) return x.textContent='Format email tidak valid.';
+  if(p.length<6) return x.textContent='Password minimal 6 karakter.';
+  if(p!==q) return x.textContent='Konfirmasi password tidak sama.';
+  S.user=n; toast('Akun berhasil dibuat'); go('home'); }
+
+R.home = () => { const o=mainOf(); return {nav:'home',h:`
+ <div class="row sp"><div><h1>Halo, ${S.user} 👋</h1><p>Selamat datang di PaduPadan!</p></div><button onclick="go('notif')" style="font-size:26px;background:none;border:0;cursor:pointer" aria-label="Notifikasi">🔔</button></div>
+ ${S.ootdOpen?`<div class="card"><div class="row sp"><h2 style="margin:0">OOTD Hari ini</h2><button onclick="S.ootdOpen=false;draw()" style="border:0;background:none;font-size:20px;cursor:pointer" aria-label="Tutup">✕</button></div>
+ <div class="item" onclick="go('ootd')"><div class="img" style="width:90px;height:90px">🧍</div><div><b>${o.t}</b><br><a style="color:var(--c);font-weight:700">Lihat Outfit →</a></div></div></div>`:''}
+ <h2>Quick Recommendation</h2><div class="row sp">
+ ${[['Kuliah','🎒','#f4a261'],['Hangout','👕','#279C8B'],['Rapat','💼','#E9C46A'],['Lainnya','⋯','#E76F51']].map(a=>`<div class="center"><button class="ic" style="background:${a[2]}" onclick="quickGo('${a[0]}')">${a[1]}</button><div class="sm">${a[0]}</div></div>`).join('')}</div>
+ <div class="row sp"><h2>Riwayat Kombinasi</h2><a href="#history" style="color:var(--c);font-weight:700;font-size:13px">Lihat Semua</a></div>
+ <div class="row" style="flex-wrap:nowrap;overflow-x:auto">${S.hist.map(h=>`<div class="card plain" style="min-width:110px;text-align:center" onclick="go('history')"><div style="font-size:30px">${h.e}</div><span class="sm">${h.t}</span></div>`).join('')}</div>`}; };
+function quickGo(o){ if(o==='Lainnya'){ S.occ='Lainnya'; go('occasion'); } else { S.occ=o; go('quick'); } }
+
+R.ootd = () => { const o=mainOf(); const sl=['Atasan','Bawahan','Outer','Sepatu'];
+  return {t:'OOTD Hari Ini',back:1,nav:'home',h:`<div class="card"><div class="img" style="height:200px;font-size:90px">🧍</div>
+  <span class="tag">${o.t}</span> &nbsp; ☁️ Cuaca ${o.w}</div>
+  ${o.it.map((x,i)=>`<div class="item"><div class="img">${['👕','👖','🧥','👟','👜'][i%5]}</div><div><b>${sl[i]||'Aksesoris'}</b><br><span class="sm">${x}</span></div></div>`).join('')}
+  <button class="btn o" style="width:50%" onclick="S.cur=S.today;go('feedback')">Koreksi</button>`}; };
+
+R.quick = () => ({t:'Quick Recommendation',back:1,nav:'home',h:`<p style="margin-top:8px">Mau memakai outfit untuk?</p>
+ <h2>Occasion</h2>${chips(OCC.slice(0,4),S.occ,'setOcc')}<h2>Style (Opsional)</h2>${chips(STY.slice(0,4),S.sty,'setSty')}
+ <h2>Cuaca</h2><div class="card plain" onclick="go('weather')">☁️ <b>24°C Berawan</b> <span style="float:right">›</span></div>
+ <button class="btn" onclick="S.rf=S.occ;go('results')">Rekomendasikan</button>`});
+function setOcc(a){ S.occ=a; draw(); }
+function setSty(a){ S.sty=S.sty===a?'':a; draw(); }
+
+R.history = () => ({t:'Riwayat Kombinasi',back:1,nav:'home',h:S.hist.map((h,i)=>`<div class="card"><b style="font-size:18px">${h.t}</b><br><span class="sm">${h.d}</span>
+ <div class="row sp"><span style="font-size:34px">${h.e}</span><span class="sm">Gaya: ${h.g}<br>Suhu: ${h.s}</span>
+ <button style="border:0;background:none;font-size:24px;cursor:pointer" onclick="S.hist[${i}].f=!S.hist[${i}].f;draw()" aria-label="Favorit">${h.f?'❤️':'🤍'}</button></div></div>`).join('')});
+
+R.closet = () => { const l=S.items.filter(i=>(S.closetCat==='Semua'||i.c===S.closetCat)&&i.n.toLowerCase().includes(S.q.toLowerCase()));
+  return {t:'Koleksi Pakaian',back:1,nav:'closet',h:`<input id="q" placeholder="🔍 Search Pakaian..." value="${S.q}" oninput="S.q=this.value;drawList()" style="border-radius:24px">
+  ${chips(['Semua','Atasan','Bawahan','Kerudung','Outer'],S.closetCat,'setCat')}<div id="lst">${closetGrid(l)}</div>`}; };
+function closetGrid(l){ return l.length?`<div class="grid" style="margin-top:12px">${l.map(i=>`<div class="card plain" onclick="S.editId=${i.id};go('detail')"><div class="img">${i.e}</div><b class="sm">${i.n}</b><br><span class="tag">${i.c}</span></div>`).join('')}</div>`:'<p class="center sm" style="margin-top:30px">Tidak ada pakaian ditemukan.</p>'; }
+function drawList(){ $('#lst').innerHTML=closetGrid(S.items.filter(i=>(S.closetCat==='Semua'||i.c===S.closetCat)&&i.n.toLowerCase().includes(S.q.toLowerCase()))); }
+function setCat(a){ S.closetCat=a; draw(); }
+
+R.detail = () => { const i=S.items.find(x=>x.id===S.editId); if(!i) return R.closet();
+  return {t:'Detail Pakaian',back:1,nav:'closet',h:`<div class="card plain"><div class="img" style="height:200px;font-size:90px">${i.e}</div></div>
+  <h2>${i.n}</h2><span class="tag">${i.c}</span>
+  <div class="card plain" style="cursor:default"><b>Detail Pakaian</b><p class="sm">Gaya: ${i.st}</p><p class="sm">Keterangan: ${i.d}</p></div>
+  <div class="row sp"><b>Rekomendasi Outfit</b><a href="#rec" class="sm">Lihat Lainnya →</a></div>
+  <div class="grid">${S.O.slice(3,5).map(o=>`<div class="card plain" onclick="S.cur=${o.id};go('outfit')"><div class="img" style="height:80px">🧍</div><span class="tag">${o.occ}</span><br><b class="sm">${o.t}</b></div>`).join('')}</div>
+  <div class="row"><button class="btn" style="flex:1" onclick="S.draft=null;go('edit')">Edit ✏️</button><button class="btn r" style="flex:1" onclick="delItem(${i.id})">Hapus 🗑</button></div>`}; };
+function delItem(id){ modal('Hapus pakaian ini dari koleksi? Tindakan tidak dapat dibatalkan.','Ya, hapus',()=>{ S.items=S.items.filter(x=>x.id!==id); toast('Pakaian dihapus'); go('closet'); }); }
+
+/* Tambah pakaian: kamera -> AI tagging -> konfirmasi/edit -> simpan */
+R.camera = () => ({t:'Upload Foto',back:1,nav:'closet',h:`<div class="card plain center" style="height:320px;display:flex;flex-direction:column;justify-content:center;cursor:default"><div style="font-size:80px">📷</div><p class="sm">Arahkan kamera ke pakaian, lalu ambil foto</p></div>
+  <button class="btn" onclick="go('tagging')">⚪ Ambil Foto</button><button class="btn o" onclick="go('tagging')">🖼 Upload dari Galeri</button>`});
+R.tagging = () => { setTimeout(()=>{ if(location.hash==='#tagging'){ S.draft={n:'Maroon Blouse',c:'Atasan',e:'👚',st:'Elegan, Simple, Feminim',d:'Hasil AI: kemeja/blouse warna maroon'}; go('edit'); } },2200);
+  return {t:'Detail Pakaian',back:1,h:`<div class="card plain center" style="height:380px;display:flex;flex-direction:column;justify-content:center;cursor:default"><b>AI Mengenali Pakaian</b><div class="spin"></div><div style="font-size:70px">👚</div><p class="sm">Mohon Tunggu Sebentar...</p></div>`}; };
+R.edit = () => { const d=S.draft||S.items.find(x=>x.id===S.editId)||{n:'',c:'',st:'',d:'',e:'👕'};
+  return {t:S.draft?'Konfirmasi Atribut':'Edit Pakaian',back:1,nav:'closet',h:`<div class="card plain center"><div style="font-size:70px">${d.e||'👕'}</div></div>
+  <label>Nama Pakaian</label><input id="n" value="${d.n}" placeholder="Contoh : Kemeja Putih">
+  <label>Kategori</label><select id="c">${['','Atasan','Bawahan','Outer','Kerudung','Dress','Sepatu'].map(c=>`<option ${c===d.c?'selected':''} value="${c}">${c||'Pilih Kategori'}</option>`).join('')}</select>
+  <label>Gaya</label><input id="s" value="${d.st}" placeholder="Elegan, Simple, Feminim"><label>Deskripsi</label><textarea id="d" rows="3" placeholder="Deskripsi pakaian">${d.d}</textarea>
+  <div class="err" id="er"></div><button class="btn" onclick="saveItem()">Simpan</button>`}; };
+function saveItem(){ const n=$('#n').value.trim(),c=$('#c').value;
+  if(!n||!c) return $('#er').textContent='Nama pakaian dan kategori wajib diisi.';
+  const em={Atasan:'👚',Bawahan:'👖',Outer:'🧥',Kerudung:'🧣',Dress:'👗',Sepatu:'👟'}[c];
+  if(S.draft){ S.items.push({id:Date.now(),n,c,e:em,st:$('#s').value,d:$('#d').value}); S.draft=null; go('saved'); }
+  else { Object.assign(S.items.find(x=>x.id===S.editId),{n,c,e:em,st:$('#s').value,d:$('#d').value}); toast('Perubahan disimpan'); go('closet'); } }
+R.saved = () => ({t:'Detail Pakaian',nav:'closet',h:`<div class="center" style="margin-top:80px"><b>Pakaian Berhasil disimpan</b><div style="font-size:80px;color:var(--t)">✅</div><button class="btn" onclick="go('closet')">Kembali ke halaman koleksi</button></div>`});
+
+/* Smart Recommendation */
+R.rec = () => ({t:'Rekomendasi Outfit',nav:'rec',h:`<div class="row"><button class="chip on" onclick="go('rec')">Untuk hari ini</button><button class="chip" onclick="go('occasion')">Berdasarkan Acara</button><button class="chip" onclick="go('fbl')">Feedback</button></div>
+ ${outfitCard(mainOf())}<button class="btn" onclick="S.cur=S.today;go('outfit')">Lihat Detail</button>
+ <button class="btn o" onclick="go('filter')">⚙️ Filter Rekomendasi</button>`});
+R.filter = () => ({t:'Filter Rekomendasi',back:1,nav:'rec',h:`<h2>Budget</h2><input type="range" min="0" max="1000000" step="10000" value="340000" oninput="$('#bv').textContent='Rp '+(+this.value).toLocaleString('id-ID')"><b id="bv">Rp 340.000</b>
+ <h2>Musim</h2><div class="row">${['Panas','Dingin','Hujan'].map(m=>`<button class="chip" onclick="this.classList.toggle('on')">${m}</button>`).join('')}</div>
+ <h2>Warna Favorit</h2><div>${COL.map(c=>`<span class="dot" style="background:${c}" onclick="this.classList.toggle('on')"></span>`).join('')}</div>
+ <h2>Tipe Pakaian</h2><div class="row">${['Bawahan','Atasan','Outer','Dress'].map(m=>`<button class="chip" onclick="this.classList.toggle('on')">${m}</button>`).join('')}</div>
+ <div class="row"><button class="btn o" style="flex:1" onclick="draw()">Reset</button><button class="btn" style="flex:1" onclick="toast('Filter diterapkan');go('rec')">Terapkan</button></div>`});
+R.occasion = () => ({t:'Pilih Occasion',back:1,nav:'rec',h:`<div class="grid" style="margin-top:10px">${[['Kuliah','🎒'],['Kerja','💼'],['Hangout','🏠'],['Formal','🎀'],['Lainnya','⋯']].map(a=>`<button class="chip ${S.occ===a[0]?'on':''}" style="height:90px;border-radius:16px;font-size:15px" onclick="S.occ='${a[0]}';draw()"><div style="font-size:26px">${a[1]}</div>${a[0]}</button>`).join('')}</div>
+ ${S.occ==='Lainnya'?`<h3>Lainnya :</h3><input id="oo" value="${S.otherOcc}" placeholder="Tulis deskripsi acara...">`:''}
+ <button class="btn" onclick="if(S.occ==='Lainnya')S.otherOcc=$('#oo').value;go('style')">Lanjut</button>`});
+R.style = () => ({t:'Pilih Style (Opsional)',back:1,nav:'rec',h:`<div class="grid" style="margin-top:10px">${STY.map(a=>`<button class="chip ${S.sty===a?'on':''}" style="height:70px;border-radius:16px" onclick="setSty('${a}')">${a}</button>`).join('')}</div>
+ <button class="btn" onclick="go('weather')">Lanjut</button>`});
+R.weather = () => ({t:'Cuaca Hari Ini',back:1,nav:'rec',h:`<div class="card plain center" style="cursor:default"><div style="font-size:70px">☁️</div><h1>Berawan</h1><div style="font-size:40px">24° C</div><span class="sm">22° / 25°</span></div>
+ <div class="card plain row sp" style="cursor:default">${[['Pagi','☀️'],['Siang','☀️'],['Sore','☀️'],['Malam','🌧️']].map(a=>`<div class="center"><div style="font-size:28px">${a[1]}</div><span class="sm">${a[0]}</span></div>`).join('')}</div>
+ <p class="center">✓ Rekomendasi outfit menyesuaikan kondisi cuaca hari ini</p><button class="btn" onclick="S.rf=S.occ==='Kerja'?'Rapat':S.occ;go('results')">Lanjut</button>`});
+R.results = () => { const f=S.rf==='Semua'||S.rf==='Lainnya'?S.O:S.O.filter(o=>o.occ===S.rf&&(!S.sty||o.st===S.sty||true));
+  const best=S.sty?f.filter(o=>o.st===S.sty).concat(f.filter(o=>o.st!==S.sty)):f;
+  return {t:'Rekomendasi Outfit',back:1,nav:'rec',h:`${chips(['Semua','Kuliah','Rapat','Hangout','Formal'],S.rf,'setRf')}
+  <p class="sm" style="margin-top:8px">Berdasarkan: ${S.rf} ${S.sty?'• '+S.sty:''} • 24°C</p>
+  ${best.length?`<div class="grid">${best.map(o=>`<div class="card plain" onclick="S.cur=${o.id};go('outfit')"><button style="float:right;border:0;background:${S.saved[o.id]?'var(--t)':'#889'};color:#fff;border-radius:50%;width:28px;height:28px;cursor:pointer" onclick="event.stopPropagation();S.saved[${o.id}]=!S.saved[${o.id}];draw()" aria-label="Simpan">🔖</button><div class="img">🧍</div><span class="tag">${o.occ}</span><br><b class="sm">${o.t}</b><div>${o.cl.map(c=>`<span class="dot" style="width:14px;height:14px;background:${c}"></span>`).join('')}</div></div>`).join('')}</div>`:'<p class="center sm">Belum ada outfit untuk pilihan ini.</p>'}`}; };
+function setRf(a){ S.rf=a; draw(); }
+R.outfit = () => { const o=S.O[S.cur];
+  return {t:'Detail',back:1,nav:'rec',h:`<div class="card plain" style="cursor:default"><div class="img" style="height:220px;font-size:100px">🧍</div><div style="margin-top:8px">${o.cl.map(c=>`<span class="dot" style="background:${c}"></span>`).join('')}</div>
+  <h3>${o.st} | ${o.occ} | Siang</h3><div class="row">${o.it.map(x=>`<span class="tag">${x}</span>`).join('')}</div></div>
+  <div class="row"><button class="btn o" style="flex:1" onclick="S.like=true;go('feedback')">👍 Suka</button><button class="btn o" style="flex:1" onclick="S.like=false;go('feedback')">👎 Tidak</button></div>
+  <div class="row"><button class="btn o" style="flex:1" onclick="swap()">Koreksi Kombinasi</button><button class="btn" style="flex:1" onclick="S.today=S.cur;go('wear')">Pakai Hari Ini</button></div>
+  <button class="btn o" onclick="toast('Disimpan ke koleksi')">Simpan ke Koleksi</button>`}; };
+function swap(){ const o=S.O[S.cur]; const d=document.createElement('div'); d.className='mod'; d.id='mod';
+  d.innerHTML=`<div><b>Ganti Item</b>${o.it.map((x,i)=>`<select class="sw">${ALT.map(a=>`<option ${a===x?'selected':''}>${a}</option>`).join('')}</select>`).join('')}<button class="btn" id="ap">Terapkan</button><button class="btn o" onclick="$('#mod').remove()">Batal</button></div>`;
+  $('#app').append(d); $('#ap').onclick=()=>{ o.it=[...document.querySelectorAll('.sw')].map(s=>s.value); d.remove(); toast('Kombinasi diperbarui'); draw(); }; }
+R.feedback = () => ({t:'Feedback',back:1,nav:'rec',h:`<h2 class="center">Apakah kamu suka outfit ini?</h2><div class="row" style="justify-content:center"><button class="chip ${S.like?'on':''}" onclick="S.like=true;draw()">Suka</button><button class="chip ${!S.like?'on':''}" onclick="S.like=false;draw()">Tidak Suka</button></div>
+ ${!S.like?`<div style="margin:20px 0">${['Warna kurang cocok','Gaya kurang sesuai','Item tidak nyaman','Lainnya'].map(r=>`<label style="display:block;font-weight:400;margin:10px 0"><input type="checkbox" class="rs" value="${r}" style="width:auto;margin-right:8px">${r}</label>`).join('')}<input id="fo" placeholder="Lainnya : tulis alasan"></div>`:''}
+ <button class="btn" onclick="sendFb()">Kirim</button>`});
+function sendFb(){ const r=[...document.querySelectorAll('.rs:checked')].map(x=>x.value);
+  if(!S.like&&!r.length&&!($('#fo')||{}).value) return toast('Pilih minimal satu alasan');
+  S.fb.push({o:S.O[S.cur].t,like:S.like,r}); toast('Terima kasih! Rekomendasi berikutnya disesuaikan'); go('results'); }
+R.fbl = () => ({t:'Feedback',back:1,nav:'rec',h:S.fb.length?S.fb.map(f=>`<div class="card plain" style="cursor:default"><b>${f.o}</b> ${f.like?'👍':'👎'}<br><span class="sm">${f.r.join(', ')}</span></div>`).join(''):'<p class="center sm" style="margin-top:40px">Belum ada feedback. Beri nilai pada detail outfit.</p>'});
+R.wear = () => ({t:'',nav:'rec',h:`<div class="card plain center" style="margin-top:60px;cursor:default"><div style="font-size:60px;color:var(--c)">🛍️✔</div><p>Outfit hari ini sudah ditambahkan sebagai outfit hari ini!</p><button class="btn" onclick="go('ootd')">Lihat di OOTD hari ini</button></div>`});
+
+/* Profil & preferensi */
+R.profile = () => ({t:'Profil',nav:'profile',h:`<div class="card plain center" style="cursor:default"><div style="font-size:60px">🧕</div><b>${S.user}</b><br><span class="sm">${S.user.replace(/\W/g,'').toLowerCase()}@gmail.com</span></div>
+ ${[['👤','Edit Profil','editprofile'],['🪝','Preferensi Gaya','prefs'],['📊','Wardrobe Analytics','analytics'],['⚙️','Pengaturan','set'],['❓','Bantuan','help'],['🚪','Logout','out']].map(a=>`<div class="card plain row sp" onclick="menu('${a[2]}')"><span>${a[0]} &nbsp;<b>${a[1]}</b></span><span>›</span></div>`).join('')}`});
+function menu(k){ if(k==='set'||k==='help') toast('Halaman '+(k==='set'?'Pengaturan':'Bantuan')+' (demo)'); else if(k==='out') modal('Yakin ingin keluar dari akun?','Logout',()=>go('login')); else go(k); }
+R.editprofile = () => ({t:'Edit Profil',back:1,nav:'profile',h:`<label>Nama</label><input id="pn" value="${S.user}"><label>Email</label><input value="${S.user.toLowerCase()}@gmail.com"><label>Tanggal Lahir</label><input type="date" value="2005-08-01"><label>Tinggi Badan (cm)</label><input type="number" value="155"><label>Berat Badan (kg)</label><input type="number" value="56">
+ <button class="btn" onclick="S.user=$('#pn').value||S.user;toast('Profil diperbarui');go('profile')">Simpan</button>`});
+R.prefs = () => ({t:'Preferensi Gaya',back:1,nav:'profile',h:`<h2>Gaya Favorit</h2><div class="row">${[...STY.slice(0,3),'Edgy','Vintage','Sporty'].map(a=>`<button class="chip" onclick="this.classList.toggle('on')">${a}</button>`).join('')}</div>
+ <h2>Warna Favorit</h2><div>${COL.map(c=>`<span class="dot" style="background:${c}" onclick="this.classList.toggle('on')"></span>`).join('')}</div>
+ <h2>Tipe Pakaian yang Sering Dipakai</h2><div class="row">${['👕 Atasan','👗 Dress','👖 Bawahan','🧥 Outer'].map(a=>`<button class="chip" onclick="this.classList.toggle('on')">${a}</button>`).join('')}</div>
+ <button class="btn o" onclick="go('mood')">🖼 Moodboard Gaya</button><button class="btn" onclick="toast('Preferensi disimpan');go('profile')">Simpan</button>`});
+R.mood = () => ({t:'Moodboard Gaya',back:1,nav:'profile',h:`<p class="sm">Upload referensi gaya atau inspirasi outfit yang kamu sukai. Ini membantu kami memberikan rekomendasi yang lebih sesuai.</p>
+ <div class="grid" id="mb" style="margin-top:12px">${S.mb||['🧥','👖','🧶','👗','🧕'].map(e=>`<div class="img" style="height:150px">${e}</div>`).join('')}<button class="btn" style="height:150px;border-radius:12px;margin:0" onclick="S.mb=(S.mb||'')+'<div class=\\'img\\' style=\\'height:150px\\'>🖼</div>';toast('Foto ditambahkan');draw()">+ Tambah Foto</button></div>
+ <button class="btn" onclick="toast('Moodboard disimpan');go('prefs')">Simpan</button>`});
+const P={Minggu:[48,12,[34,26,16,14,10]],Bulan:[65,18,[32,24,18,16,10]],Tahun:[82,40,[30,25,20,15,10]]}; S.per='Bulan';
+R.analytics = () => { const p=P[S.per],L=['Dress','Atasan','Bawahan','Outer','Gamis'];
+  return {t:'Analitik Wardobe',back:1,nav:'profile',h:`${chips(['Minggu','Bulan','Tahun'],S.per,'setPer')}
+  <div class="card plain row sp" style="cursor:default"><div class="center"><div class="ring" style="background:conic-gradient(var(--t) ${p[0]}%,#dde ${p[0]}%);margin:auto"><span style="background:var(--k);border-radius:50%;width:80px;height:80px;display:flex;align-items:center;justify-content:center">${p[0]}%</span></div><b class="sm">Tingkat Pemakaian</b></div><div class="center"><div class="ring" style="background:var(--t);color:#fff;width:70px;height:70px">${p[1]}</div><span class="sm">Item paling sering dipakai</span></div></div>
+  <h2>Kategori Pakaian</h2><div class="card plain row" style="align-items:flex-end;height:170px;cursor:default">${p[2].map((v,i)=>`<div class="center" style="flex:1"><div class="bar" style="height:${v*3.5}px"></div><span style="font-size:11px">${L[i]}<br>${v}%</span></div>`).join('')}</div>
+  <div class="card" style="background:var(--t);color:#fff;border:0" onclick="go('rare')">👗 ${L[0]} adalah kategori yang sering kamu pakai! ›</div>`}; };
+function setPer(a){ S.per=a; draw(); }
+R.rare = () => ({t:'Pakaian Jarang Dipakai',back:1,nav:'profile',h:`<p class="sm">Berikut adalah pakaian yang jarang kamu pakai dalam 3 bulan terakhir.</p>${[['🧶','Sweater Rajut',1],['🧥','Jaket Denim',2],['🧣','Pashmina Dubai',2],['👗','Rok Midi',3],['👗','Gamis',4]].map(a=>`<div class="card plain item" onclick="toast('Dipakai ${a[2]} kali')"><div class="img">${a[0]}</div><div style="flex:1"><b>${a[1]}</b><br><span class="sm">Dipakai ${a[2]} kali</span></div>›</div>`).join('')}<button class="btn" onclick="go('closet')">Lihat Semua</button>`});
+R.notif = () => ({t:'Notifikasi',back:1,nav:'home',h:S.notif.map(n=>`<div class="card plain" onclick="go('rec')">🔔 ${n}</div>`).join('')});
+
+/* ===== ROUTER & NAVIGASI ===== */
+const NAV=[['home','🏠','Beranda','home'],['closet','👗','Koleksi','closet'],['camera','+','','plus'],['rec','✨','Rekomendasi','rec'],['profile','👤','Profil','profile']];
+function draw(){ const id=location.hash.slice(1)||'splash'; const o=(R[id]||R.splash)();
+  $('#h').style.display=(o.hide||!(o.t||o.back))?'none':'flex'; $('#bk').style.visibility=o.back?'visible':'hidden'; $('#t').textContent=o.t||'';
+  $('#v').innerHTML=o.h; $('#v').scrollTop=0;
+  const n=$('#n'); n.style.display=o.nav?'flex':'none';
+  n.innerHTML=NAV.map(a=>`<a href="#${a[0]}" class="${a[3]==='plus'?'plus':''} ${a[3]===o.nav?'on':''}"><b>${a[1]}</b>${a[2]}</a>`).join(''); }
+addEventListener('hashchange',draw); draw();
+</script>
+</body>
+</html>
